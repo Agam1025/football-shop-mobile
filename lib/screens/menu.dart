@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:football_shop/screens/productslist_form.dart';
-import 'package:football_shop/widgets/left_drawer.dart';// ✅ tambahkan import drawer
+import 'package:football_shop/screens/product_entry_list.dart';
+import 'package:football_shop/screens/login.dart';
+import 'package:football_shop/widgets/left_drawer.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
 
 class MyHomePage extends StatelessWidget {
   MyHomePage({super.key});
 
-  final String nama = "Naufal Agam Ardiansyah"; //nama
-  final String npm = "2406345974"; //npm
+  final String nama = "Naufal Agam Ardiansyah";
+  final String npm = "2406345974";
   final String kelas = "B";
 
   final List<ItemHomepage> items = [
@@ -18,23 +22,28 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ Tambahkan Drawer di sini supaya tombol hamburger muncul
       drawer: const LeftDrawer(),
 
       appBar: AppBar(
+        backgroundColor: Colors.deepOrange,
         title: const Text(
           'Football Shop',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+          ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
 
-      body: Padding(
+      body: Container(
+        color: const Color(0xFFF7F7F7),
         padding: const EdgeInsets.all(16.0),
+
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Baris InfoCard
+            // --- Row InfoCard ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -44,28 +53,30 @@ class MyHomePage extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 16.0),
+            const SizedBox(height: 20.0),
 
             Center(
               child: Column(
                 children: [
                   const Padding(
-                    padding: EdgeInsets.only(top: 16.0),
+                    padding: EdgeInsets.only(top: 12.0),
                     child: Text(
                       'Selamat datang di Football Shop',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 18.0,
+                        fontSize: 20.0,
+                        color: Colors.black87,
                       ),
                     ),
                   ),
 
-                  // Grid Items
+                  const SizedBox(height: 16),
+
                   GridView.count(
                     primary: true,
-                    padding: const EdgeInsets.all(20),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                    padding: const EdgeInsets.all(10),
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
                     crossAxisCount: 3,
                     shrinkWrap: true,
                     children: items.map((ItemHomepage item) {
@@ -82,7 +93,7 @@ class MyHomePage extends StatelessWidget {
   }
 }
 
-// === InfoCard Widget ===
+// === InfoCard ===
 class InfoCard extends StatelessWidget {
   final String title;
   final String content;
@@ -92,15 +103,34 @@ class InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2.0,
+      color: Colors.white,
+      elevation: 5,
+      shadowColor: Colors.black26,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Container(
         width: MediaQuery.of(context).size.width / 3.5,
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
         child: Column(
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8.0),
-            Text(content),
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.deepOrange,
+              ),
+            ),
+            const SizedBox(height: 6.0),
+            Text(
+              content,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -108,7 +138,7 @@ class InfoCard extends StatelessWidget {
   }
 }
 
-// === ItemHomepage class ===
+// === ItemHomepage ===
 class ItemHomepage {
   final String name;
   final IconData icon;
@@ -117,7 +147,7 @@ class ItemHomepage {
   ItemHomepage(this.name, this.icon, this.color);
 }
 
-// === ItemCard Widget ===
+// === ItemCard ===
 class ItemCard extends StatelessWidget {
   final ItemHomepage item;
 
@@ -125,41 +155,108 @@ class ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final request = context.read<CookieRequest>();
+
     return Material(
       color: item.color,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: () {
-          // Snackbar
+        onTap: () async {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
               SnackBar(
+                backgroundColor: Colors.deepOrange,
                 content: Text("Kamu telah menekan tombol ${item.name}!"),
               ),
             );
 
-          // ✅ Navigasi ke halaman Create Products
+          // === CREATE PRODUCTS ===
           if (item.name == "Create Products") {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ProductsFormPage()),
+              MaterialPageRoute(
+                builder: (context) => const ProductsFormPage(),
+              ),
             );
+          }
+
+          // === MY PRODUCTS (FILTER BY USER) ===
+          else if (item.name == "My Products") {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ProductEntryListPage(
+                  endpointUrl: "http://localhost:8000/json/my-products/",
+                  pageTitle: "My Products",
+                ),
+              ),
+            );
+          }
+
+          // === ALL PRODUCTS ===
+          else if (item.name == "All Products") {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ProductEntryListPage(
+                  endpointUrl: "http://localhost:8000/json/",
+                  pageTitle: "All Products",
+                ),
+              ),
+            );
+          }
+
+          // === LOGOUT ===
+          else if (item.name == "Logout") {
+            final response =
+                await request.logout("http://localhost:8000/auth/logout/");
+
+            String message = response["message"];
+
+            if (context.mounted) {
+              if (response['status']) {
+                String uname = response["username"];
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.deepOrange,
+                    content: Text("$message See you again, $uname."),
+                  ),
+                );
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text(message),
+                  ),
+                );
+              }
+            }
           }
         },
 
         child: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(item.icon, color: Colors.white, size: 30.0),
-                const SizedBox(height: 3),
+                const SizedBox(height: 5),
                 Text(
                   item.name,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
